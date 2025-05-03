@@ -3,12 +3,10 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <stdexcept> 
-#include <nlohmann/json.hpp>
+#include <stdexcept>
 
-using json = nlohmann::json;
-
-struct Config {
+struct Config
+{
     size_t num_particles = 500;
     double field_size = 10.0;
     size_t initial_threads = 4;
@@ -27,7 +25,6 @@ struct Config {
     int grid_width = 80;
     int grid_height = 24;
     std::map<int, char> density_map = {
-        {1, '.'}, {2, 'o'}, {3, 'O'}, {4, '*'}, {5, '#'}
-    };
+        {1, '.'}, {2, 'o'}, {3, 'O'}, {4, '*'}, {5, '#'}};
     int max_density_level = 5;
-}; 
+};
