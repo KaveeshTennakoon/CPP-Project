@@ -13,8 +13,15 @@ configure_file(
   COPYONLY
 )
 
-# Enable OpenMP
-find_package(OpenMP REQUIRED)
+# Try to find OpenMP, but make it optional
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    message(STATUS "OpenMP found, enabling parallel features")
+    set(HAVE_OPENMP TRUE)
+else()
+    message(STATUS "OpenMP not found, disabling OpenMP-specific features")
+    set(HAVE_OPENMP FALSE)
+endif()
 
 # Add External Dependencies using FetchContent
 include(FetchContent)
@@ -51,8 +58,10 @@ target_include_directories(quantum_simulator PUBLIC
    ${json_SOURCE_DIR}/include
 )
 
-# Link OpenMP
-target_link_libraries(quantum_simulator PUBLIC OpenMP::OpenMP_CXX)
+# Link OpenMP if available
+if(HAVE_OPENMP)
+    target_link_libraries(quantum_simulator PUBLIC OpenMP::OpenMP_CXX)
+endif()
 
 # Add executable
 add_executable(quantum_simulator_app src/main.cpp)

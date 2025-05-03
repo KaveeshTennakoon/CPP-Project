@@ -58,11 +58,14 @@ void ThreadManager::addTask(std::function<void()> task)
     if (!running)
         return;
 
+    bool wasEmpty;
     {
         std::lock_guard<std::mutex> lock(taskMutex);
+        wasEmpty = taskQueue.empty();
         taskQueue.push(std::move(task));
     }
 
+    // Notify a waiting worker thread that there's a new task
     taskCondition.notify_one();
 }
 
@@ -104,10 +107,8 @@ size_t ThreadManager::getTaskCount() const
 void ThreadManager::waitForCompletion()
 {
     std::unique_lock<std::mutex> lock(completionMutex);
-    while (getTaskCount() > 0 || activeThreads > 0)
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
+    completionCondition.wait(lock, [this]()
+                             { return (getTaskCount() == 0 && activeThreads == 0); });
 }
 
 size_t ThreadManager::getActiveThreadCount() const
@@ -133,6 +134,13 @@ void ThreadManager::processNextTask()
         activeThreads++;
         task();
         activeThreads--;
+
+        // Notify completion if this was the last task and no active threads
+        if (getTaskCount() == 0 && activeThreads == 0)
+        {
+            std::lock_guard<std::mutex> lock(completionMutex);
+            completionCondition.notify_all();
+        }
     }
 }
 
@@ -165,6 +173,13 @@ void ThreadManager::workerThread(size_t threadId)
             activeThreads++;
             task();
             activeThreads--;
+
+            // Notify completion if this was the last task and no active threads
+            if (getTaskCount() == 0 && activeThreads == 0)
+            {
+                std::lock_guard<std::mutex> lock(completionMutex);
+                completionCondition.notify_all();
+            }
         }
     }
 }

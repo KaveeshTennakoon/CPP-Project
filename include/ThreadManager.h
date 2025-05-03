@@ -38,6 +38,7 @@ private:
     mutable std::mutex taskMutex;
     mutable std::mutex completionMutex;
     std::condition_variable taskCondition;
+    std::condition_variable completionCondition;
     std::atomic<bool> running{false};
     std::atomic<size_t> activeThreads{0};
     size_t numThreads;
